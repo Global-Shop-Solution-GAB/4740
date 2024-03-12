@@ -1,0 +1,264 @@
+Program.Sub.ScreenSU.Start
+Gui.F_Main..create
+Gui.F_Main..caption("ADP Entry")
+Gui.F_Main..size(4110,1935)
+Gui.F_Main..position(0,0)
+Gui.F_Main..event(UnLoad,unload)
+Gui.F_Main..alwaysontop(True)
+Gui.F_Main..fontname("arial")
+Gui.F_Main..forecolor(0)
+Gui.F_Main..fontstyle(False,False,False,False,False)
+Gui.F_Main..BackColor(-2147483633)
+Gui.F_Main..maxbutton(False)
+Gui.F_Main..mousepointer(0)
+Gui.F_Main..sizeable(False)
+Gui.F_Main..MinX(0)
+Gui.F_Main..MinY(0)
+Gui.F_Main.txtADPCompany.create(textbox,"",True,1215,300,0,195,405,True,0,"arial",8,-2147483643,1)
+Gui.F_Main.txtADPCompany.text("")
+Gui.F_Main.txtADPCompany.maxLength(3)
+Gui.F_Main.txtADPCompany.TabStop(True)
+Gui.F_Main.txtADPCompany.TabIndex(1)
+Gui.F_Main.lbl1.create(label,"ADP Company",True,1425,255,1,195,195,True,0,"arial",8,-2147483633,0)
+Gui.F_Main.txtBatchNum.create(textbox,"",True,1215,300,0,1980,405,True,0,"arial",8,-2147483643,1)
+Gui.F_Main.txtBatchNum.text("")
+Gui.F_Main.txtBatchNum.maxLength(8)
+Gui.F_Main.txtBatchNum.TabStop(True)
+Gui.F_Main.txtBatchNum.TabIndex(2)
+Gui.F_Main.lbl2.create(label,"Batch Number",True,1365,255,1,1980,195,True,0,"arial",8,-2147483633,0)
+Gui.F_Main.cmdExport.create(button)
+Gui.F_Main.cmdExport.caption("Export")
+Gui.F_Main.cmdExport.size(975,375)
+Gui.F_Main.cmdExport.position(195,915)
+Gui.F_Main.cmdExport.fontname("arial")
+Gui.F_Main.cmdExport.event(Click,Process)
+Gui.F_Main.cmdExport.TabStop(True)
+Gui.F_Main.cmdExport.TabIndex(3)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Variable.Global.DSN.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare(String)
+
+Function.Odbc.Connection!Conx.Openconnection(Variable.Ambient.pDSN,Variable.Ambient.PUser,Variable.Ambient.PPass)
+
+gui.F_Main.txtADPCompany.SetFocus
+
+Gui.F_main..Show
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: GCG_4740_MDT_ADP_Payroll.g2u{0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(unload)
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.Process.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare(String)
+Variable.local.sExport.declare(String)
+Variable.local.sHold.declare(String)
+Variable.local.sQuery.declare(String)
+Variable.Local.i.declare(Long)
+Variable.local.sDate.declare(String)
+Variable.local.sFilename.declare(String)
+Variable.Local.sTime.Declare(String)
+Variable.Local.iD.Declare(String)
+V.Local.sEmp.Declare(String)
+V.Local.sLine.Declare(String)
+V.Local.sType.Declare(String)
+V.Local.sOutput.Declare(String)
+V.Local.sHhead.Declare(String)
+V.Local.iC.Declare(Long)
+V.Local.iIndex.Declare(Long)
+v.Local.sDir.Declare(String)
+V.Local.bRet.Declare(Boolean)
+
+V.Local.sHhead.Set("Co Code,Batch Id,File #,Pay #,Shift,Rate Code,Tax Frequency,Special Action,Temp Dept,Reg Hours,O/T Hours,Hours 3 Code,Hours 3 Amount,Hours 3 Code,Hours 3 Amount,Hours 3 Code,Hours 3 Amount,Hours 3 Code,Hours 3 Amount,Hours 4 Code,Hours 4 Amount,Hours 4 Code,Hours 4 Amount,Hours 4 Code,Hours 4 Amount,Hours 4 Code,Hours 4 Amount,Reg Earnings,O/T Earnings,Earnings 3 Code,Earnings 3 Amount,Earnings 3 Code,Earnings 3 Amount,Earnings 3 Code,Earnings 3 Amount,Earnings 3 Code,Earnings 3 Amount,Earnings 4 Code,Earnings 4 Amount,Earnings 4 Code,Earnings 4 Amount,Earnings 4 Code,Earnings 4 Amount,Earnings 4 Code,Earnings 4 Amount,Earnings 5 Code,Earnings 5 Amount,Memo Code,Memo Amount,Repl Ded Code,Repl Ded Amount,Adjust Ded Code,Adjust Ded Amount,AOID,PFID")
+Gui.F_Main.cmdExport.Enabled(false)
+
+V.Local.sHold.Set(V.Screen.F_Main!txtADPCompany.Text)
+F.Intrinsic.Control.If(V.Local.sHold.trim,=,"")
+	F.Intrinsic.UI.Msgbox("Must enter an ADP Company Code")
+	Gui.F_Main.cmdExport.Enabled(True)
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.endif
+
+V.Local.sHold.Set(V.Screen.F_Main!txtBatchNum.text)
+F.Intrinsic.Control.If(V.Local.shold.trim,=,"")
+	F.Intrinsic.UI.Msgbox("Must enter a Batch Number")
+	Gui.F_Main.cmdExport.Enabled(True)
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.endif
+
+V.Local.sHold.Set("")
+
+Function.Intrinsic.String.Left(Variable.Passed.888888,8,Variable.Local.sDate)
+Function.Intrinsic.String.Mid(Variable.Passed.888888,9,6,Variable.Local.sTime)
+Function.Intrinsic.String.Mid(Variable.Passed.888888,15,2,Variable.Local.id)
+Function.Intrinsic.string.Left(Variable.Screen.F_Main!txtADPCompany.Text,3,Variable.Local.sHold)
+Function.Intrinsic.Control.If(Variable.Local.sHold.Length,<,3)
+	Function.intrinsic.string.concat(Variable.Local.sHold,"_",Variable.Local.sHold)
+Function.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Build("{0}\EPI",V.Caller.FilesDir,V.Local.sDir)
+F.Intrinsic.File.DirExists(V.Local.sDir,V.Local.bRet)
+F.Intrinsic.Control.If(V.Local.bRet,=,False)
+	F.Intrinsic.File.CreateDir(V.Local.sDir)
+F.Intrinsic.Control.EndIf
+
+'Function.Intrinsic.String.Concat(Variable.Caller.FilesDir,"\EPI",Variable.Local.sHold,Variable.Local.id,".csv",Variable.Local.sFilename)
+F.Intrinsic.String.Build("{0}\EPI{1}{2}.csv",V.Local.sDir,V.Local.sHold,V.Local.iD,V.Local.sFilename)
+
+F.Intrinsic.String.Build("select distinct PYRL_LABOR_XFER.EMPLOYEE,PYRL_LABOR_XFER.NAME from PYRL_LABOR_XFER  inner join EMPLOYEE_MSTR on PYRL_LABOR_XFER.EMPLOYEE=EMPLOYEE_MSTR.EMPLOYEE where RUN_CYMD = '{0}' AND RUN_TIME = '{1}'",V.Local.sDate,V.Local.sTime,V.Local.sEmp)
+F.Data.DataTable.CreateFromSQL("Emp","ConX",V.Local.sEmp,True)
+
+F.Intrinsic.UI.InvokeWaitDialog("Creating ADP .csv File.....","ADP Export")
+
+F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.Emp.RowCount--,1)
+	F.Intrinsic.UI.ChangeWaitStatus("Creating ADP .csv File.....",V.Local.i,0,V.DataTable.Emp.RowCount--)
+	F.Intrinsic.String.Build("select PYRL_LABOR_XFER.TYPE, PYRL_LABOR_XFER.HOURS,PYRL_LABOR_XFER.EC,EMPLOYEE_MSTR.PAY_TYPE from PYRL_LABOR_XFER  inner join EMPLOYEE_MSTR on PYRL_LABOR_XFER.EMPLOYEE=EMPLOYEE_MSTR.EMPLOYEE  where PYRL_LABOR_XFER.EMPLOYEE= '{0}'and RUN_CYMD = '{1}' and RUN_TIME = '{2}' order by TYPE desc",V.DataTable.Emp(V.Local.i).Employee!FieldValTrim,V.Local.sDate,V.Local.sTime,V.Local.sQuery)
+	F.Intrinsic.Control.If(V.DataTable.Temp.Exists,=,True)
+		F.Data.DataTable.Close("Temp")
+	F.Intrinsic.Control.EndIf
+	F.Data.DataTable.CreateFromSQL("Temp","ConX",V.Local.sQuery,True)
+	
+	Variable.local.sExport.redim(0,12)
+	
+	Function.Intrinsic.string.Left(Variable.Screen.F_Main!txtADPCompany.Text,3,Variable.Local.sHold)
+	gui.F_Main.txtADPCompany.Text(Variable.Local.sHold)
+	Variable.local.sExport(0).Set(Variable.Local.sHold)
+
+	Function.Intrinsic.string.Left(Variable.Screen.F_Main!txtBatchNum.Text,8,Variable.Local.sHold)
+	gui.F_Main.txtBatchNum.Text(Variable.Local.sHold)
+	Variable.local.sExport(1).Set(Variable.Local.sHold)
+	
+	V.Local.sExport(2).Set(V.DataTable.Emp(V.Local.i).Employee!FieldValTrim)
+	V.Local.sExport(3).Set("1")
+
+	F.Intrinsic.Control.For(V.Local.iC,0,V.DataTable.Temp.RowCount--,1)
+		V.Local.sType.Set(V.DataTable.Temp(V.Local.iC).Type!FieldValTrim)
+		F.Intrinsic.Control.If(V.DataTable.Temp(V.Local.iC).Pay_Type!FieldValTrim,<>,"S")
+			Function.Intrinsic.Control.If(V.Local.sType.UCase,=,"RT")
+				V.Local.sExport(9).Set(V.DataTable.Temp(V.Local.iC).Hours!FieldVal)
+			Function.Intrinsic.Control.EndIf
+
+			Function.Intrinsic.Control.If(V.Local.sType.UCase,=,"OT")
+				V.Local.sExport(10).Set(V.DataTable.Temp(V.Local.iC).Hours!FieldVal)
+			Function.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.if(V.Local.sType.UCase,=,"HT")
+				V.Local.sExport(11).Set("EC")
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.endif
+
+		F.Intrinsic.Control.If(V.Local.sExport(11).Trim,=,"EC")
+			F.Intrinsic.Control.If(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"02")
+				V.Local.sExport(11).Set("S")
+			F.Intrinsic.Control.ElseIf(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"03")
+				V.Local.sExport(11).Set("V")
+			F.Intrinsic.Control.ElseIf(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"04")
+				V.Local.sExport(11).Set("P")
+			F.Intrinsic.Control.elseif(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"05")
+				V.Local.sExport(11).Set("H")
+			F.Intrinsic.Control.Elseif(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"10")
+				V.Local.sExport(11).Set("10")
+			F.Intrinsic.Control.EndIf
+			
+			V.Local.sExport(12).Set(V.DataTable.Temp(V.Local.iC).Hours!FieldValFloat)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.If(V.Local.sType.UCase,=,"EC")
+				F.Intrinsic.Control.If(V.Local.sExport(11),=,"S","OR",V.Local.sExport(11),=,"V",V.Local.sExport(11),=,"P",V.Local.sExport(11),=,"H",V.Local.sExport(11),=,"10")
+					F.Intrinsic.Math.Add(V.Local.sExport.UBound,2,V.Local.iIndex)
+					V.Local.sExport.RedimPreserve(0,V.Local.iIndex)
+					F.Intrinsic.Math.Sub(V.Local.iIndex,1,V.Local.iIndex)
+					
+					F.Intrinsic.Control.If(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"02")
+						V.Local.sExport(V.Local.iIndex).Set("S")
+					F.Intrinsic.Control.ElseIf(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"03")
+						V.Local.sExport(V.Local.iIndex).Set("V")
+					F.Intrinsic.Control.ElseIf(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"04")
+						V.Local.sExport(V.Local.iIndex).Set("P")
+					F.Intrinsic.Control.elseif(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"05")
+						V.Local.sExport(V.Local.iIndex).Set("H")
+					F.Intrinsic.Control.Elseif(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"10")
+						V.Local.sExport(V.Local.iIndex).Set("10")
+					F.Intrinsic.Control.EndIf
+					
+					V.Local.sExport(V.Local.sExport.UBound).Set(V.DataTable.Temp(V.Local.iC).Hours!FieldValFloat)
+					
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Control.If(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"02")
+						V.Local.sExport(11).Set("S")
+					F.Intrinsic.Control.ElseIf(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"03")
+						V.Local.sExport(11).Set("V")
+					F.Intrinsic.Control.ElseIf(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"04")
+						V.Local.sExport(11).Set("P")
+					F.Intrinsic.Control.elseif(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"05")
+						V.Local.sExport(11).Set("H")
+					F.Intrinsic.Control.Elseif(V.DataTable.Temp(V.Local.iC).EC!FieldValTrim,=,"10")
+						V.Local.sExport(11).Set("10")
+					F.Intrinsic.Control.EndIf
+					
+					V.Local.sExport(12).Set(V.DataTable.Temp(V.Local.iC).Hours!FieldValFloat)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+
+	'rediming sexport to 46 that's all available columns in excel spreadsheet
+	V.Local.sExport.RedimPreserve(0,46)
+	F.Intrinsic.String.Build("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12}",V.Local.sExport(0),V.Local.sExport(1),V.Local.sExport(2),V.Local.sExport(3),V.Local.sExport(4),V.Local.sExport(5),V.Local.sExport(6),V.Local.sExport(7),V.Local.sExport(8),V.Local.sExport(9),V.Local.sExport(10),V.Local.sExport(11),V.Local.sExport(12),V.Local.sLine)
+	F.Intrinsic.String.Build("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}",V.Local.sLine,V.Local.sExport(13),V.Local.sExport(14),V.Local.sExport(15),V.Local.sExport(16),V.Local.sExport(17),V.Local.sExport(18),V.Local.sExport(19),V.Local.sExport(20),V.Local.sExport(21),V.Local.sExport(22),V.Local.sExport(23),V.Local.sExport(24),V.Local.sExport(25),V.Local.sLine)
+	F.Intrinsic.String.Build("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}",V.Local.sLine,V.Local.sExport(26),V.Local.sExport(27),V.Local.sExport(28),V.Local.sExport(29),V.Local.sExport(30),V.Local.sExport(31),V.Local.sExport(32),V.Local.sExport(33),V.Local.sExport(34),V.Local.sExport(35),V.Local.sExport(36),V.Local.sExport(37),V.Local.sExport(38),V.Local.sLine)
+	F.Intrinsic.String.Build("{0},{1},{2},{3},{4},{5},{6},{7},{8}",V.Local.sLine,V.Local.sExport(39),V.Local.sExport(40),V.Local.sExport(41),V.Local.sExport(42),V.Local.sExport(43),V.Local.sExport(44),V.Local.sExport(45),V.Local.sExport(46),V.Local.sLine)
+	F.Intrinsic.Control.If(V.Local.sOutput.Length,=,0)
+		V.Local.sOutput.Set(V.Local.sLine)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("{0}{1}{2}",V.Local.sOutput,V.Ambient.NewLine,V.Local.sLine,V.Local.sOutput)
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Next(V.Local.i)
+
+F.Intrinsic.String.Build("{0}{1}{2}",V.Local.sHhead,V.Ambient.NewLine,V.Local.sOutput,V.Local.sOutput)
+
+F.Intrinsic.File.String2File(V.Local.sFilename,V.Local.sOutput)
+
+F.Intrinsic.UI.CloseWaitDialog
+
+Function.Odbc.Connection!Conx.Close
+
+Function.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: GCG_4740_MDT_ADP_Payroll.g2u{0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(unload)
+F.Intrinsic.Control.EndTry
+Program.Sub.Process.End
+
+Program.Sub.unload.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare(String)
+
+Function.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: GCG_4740_MDT_ADP_Payroll.g2u{0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.unload.End
+
+Program.Sub.Comments.Start
+${$0$}$MDT_ADP_Payroll_export$}$JCT$}$8/28/2009$}$False
+${$1$}$$}$$}$0$}$15290$}$PR0999-CREATE-FILE-HOOK$}$12/30/2013 10:29:55 AM$}$(Program: PR0999; Screen: PR0999)
+SF>Transaction>Transfer Labor to Payroll
+${$3$}$0$}$$}$-1$}$-1$}$$}$1/1/1900$}$for Maryland Thermoform, per quote 712
+${$4$}$0$}$$}$0$}$-1$}$JCT$}$12/30/2013 10:31:02 AM$}$holiday hours not coming through, if the 05 code is flagged as "Holiday" in the payroll options.  made a change to check to see if Type ="HT", to capture the holiday hours
+Program.Sub.Comments.End
+
